@@ -15,11 +15,15 @@
 
 ### 주요 원리 
 
-![]()
+![saml_explainer](https://github.com/jiyeonseo/TIL/blob/master/term/security-assertion-markup-language-saml-explainer-100738529-orig.jpg)
+
+- Service Provider : 접근하려는 서비스 혹은 어플리케이션 
+- idp : Identity Provider. 사용자 credential(ID/PW) 인증하고 SAML assertion 발행 
+
 
 ### 실 사용 예제 
 
-![]()
+![slack_with_SAML](https://github.com/jiyeonseo/TIL/blob/master/term/Sign_in_with_SAML.png)
 
 ### SAML vs. oAuth 
 - OAuth는 JSON 기반으로 모바일 플랫폼 위에서의 SAML 결함을 보완하기 위해 개발됨. 
