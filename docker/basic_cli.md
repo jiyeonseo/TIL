@@ -89,7 +89,6 @@ docker ps --format "table {{.ID}}\t{{.Names}}"
 CONTAINER ID        NAMES
 ad236d70f099        my_container
 ```
-- Go 탬플릿 
 
 ## docker rm 
 ```sh
@@ -114,3 +113,18 @@ Are you sure you want to continue? [y/N]
 ```sh
 docker rm -f $(docker ps -a -q)
 ```
+
+## -p
+- 가상 IP 주소와 외부 포트로 연결.
+- `172.17.0.x` 순차적으로 IP 할당. -> 내부에 들어가서 `ifconfig` 
+```
+docker run -p 80:80 ubuntu:14.04 # [host port]:[container port] 
+docker run -p 3306:3306 -p 192.168.0.100:7777:80 ubuntu:14.04
+```
+
+
+
+
+
+
+
