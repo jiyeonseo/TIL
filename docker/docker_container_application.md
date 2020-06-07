@@ -215,7 +215,28 @@ $ docker run -i -t --name container_network \
 ```
 
 ### --net-alias
+- 특정 호스트의 이름으로 컨테이너 여러개 접근 가능 
+```sh
+$ docker run --name container1 \
+  --net mynetwork \
+  --net-alias cheese \
+  ubuntu 
+  
+$ docker run --name container2 \
+  --net mynetwork \
+  --net-alias cheese \
+  ubuntu 
+  
+$ docker run --name container3 \
+  --net mynetwork \
+  --net-alias cheese \
+  ubuntu 
+```
 
-
+- 각각의 컨테이너들을 다 다른 IP 주소를 할당 받았을 것. 
+- 컨테이너 내부에서 alias로 ping 을 알려보면 3개의 컨테이너가 라운드로빈으로 전송되는 것을 확인 가능 
+```sh 
+$ ping -c 1 cheese
+```
 
  
