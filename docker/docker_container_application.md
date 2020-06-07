@@ -3,7 +3,7 @@
 - 한 컨테이너에 여러 어플리케이션 가능
 - 컨테이너 간의 독립성을 보장하고 어플리케이션 각각의 버전관리, 모듈화를 위해서는 1 컨테이너 : 1 어플이 좋음. 
 
-# 예제 만들어 보기 : mysql + 워드프레스 + 
+# 예제 만들어 보기 : mysql + 워드프레스 - 볼륨, 네트워크, 로깅,   
 
 ## mysql
 ```sh
@@ -47,7 +47,7 @@ $ docker run -d \
 - link 하려는 컨테이너가 떠 있지 않으면 같이 컨테이너가 뜨지 않음. 
 - deprecated 된 옵션. -> 도커 브릿지 네트워크를 사용하자. 
 
-## Docker volumn
+# Docker volumn
 
 - 도커 이미지 : read only , 도커 컨테이너: able to write 
 - 컨테이너가 삭제되면 작성한 데이터도 사라짐 -> persistent 하지 못함. 
@@ -246,8 +246,147 @@ $ ping -c 1 cheese
 - 컨테이너 : 물리 네트워크 상의 가상 MAC 주소를 가짐 
 - 공유기, 라우터, 스위치 등 네트워크 장비 2대에 동일 IP 대역에 있는 서버/컨테이너들 간에 통신 가능 
 
+
 ```sh
-$ docker network create -d macvlan --subnet=192.168.0.0/24 \
-  --ip-range=192.168.0.64/28 --gateway 
+# 두 장비에 다음과 같이 네트워크 설정 
+$ docker network create -d macvlan \  # --driver : macvlan을 네트워크 드라이버로 사용할 것이다.
+  --subnet=192.168.0.0/24 \ # --subnet 사용할 네트워크. 192.168.0.0/24 = 네트워크 장비의 IP 대역 기본 설정
+  --ip-range=192.168.0.64/28 \ # 호스트에서 사용할 컨테이너 IP 범위. 두 장비가 겹치지 않도록 세팅  
+  --gateway \ # 네트워크에 설정된 게이트웨이 
+  -o macvlan_mode=bridge \ # 추가적인 옵션 
+  -o parent=eth
+  my_macvlan
 ```
  
+# 로깅
+
+
+
+```sh
+$ docker logs mysql
+$ docker logs --tail 2 mysql # 마지막 2줄만 읽기 
+$ docker logs --since {unix_time} mysql # 유닉스 시간으로 특정 시간 이후 로그 확인 
+$ docker logs -f -t mysql # -t 타임스탬프, -f 로그 스트림 
+$ docker run \
+  --log-opt max-size=10k \ # 최대 크기. default = -1(무제한)
+  --log-opt max-file=3 \ # 로그 파일 개수. default = 1 
+  --name log-test
+  ubuntu
+  
+$ DOCKER_OPTS="--log-opt max-size=10k --log-opt max-file=3" #요래 설정도 가능 
+```
+
+- 기본적으로 json 형태로 도커 내부에 저장됨 
+
+### syslog
+
+```sh 
+$ docker run \
+  --log-driver=syslog \ # syslog로 세팅 -> 컨테이너 내부에 /var/log/syslog
+  ubuntu 
+```
+
+- syslog를 이용하면 원격으로 중앙컨테이너에 로그 저장 가능 
+```sh
+# 중앙 서버 컨테이너 생성 
+$ docker run \
+  -p 514:514 -p 514:514/udp \
+  ubuntu 
+  
+$ vi /etc/rsyslog.conf 
+
+# /etc/rsyslog.conf 
+... 
+
+$ service rsyslog restart 
+
+# 클라이언트 컨테이너 
+$ docker run \
+  --log-driver=syslog \ # 로깅 드라이버는 syslog
+  --log-opt syslog-address=tcp://192.168.0.100:514 \ # 컨테이너에 접근할 수 있는 방법. 위에 udp도 열어놔서 udp://로 사용해도 됨.  
+  --log-opt tag="mylog" \ # 로그 앞에 붙힐 태그 
+  --log-opt syslog-facility="application-log" \ # 따로 파일을 만들 수 있음. application-log.log 로 
+  ubuntu
+
+```
+
+### fluentd
+
+- `컨테이너들` -> `fluentd` -> `몽고` case
+  - 도터 fluentd 에서는 mongo plugin을 제공하고 있지 않으니 책의 저자가 만든걸 사용하자 
+  
+```
+$ docker run -p 80:80 \
+  --log-driver=fluentd \
+  --log-opt fluentd-address=192.168.0.101:24224 \
+  --log-opt tag=docker.nginx.webserver \
+  nginx
+```
+
+### AWS 클라우드워치 로그 
+
+```
+$ docker run \
+  --log-driver=awslogs \
+  --log-opt awslogs-region=ap-northeast-2 \
+  --log-opt awslogs-group=mygroup \
+  --log-opt awslogs-stream=mylogstream \
+  ubuntu
+```
+
+# 자원 할당 제한 
+
+### 메모리 제한 
+```
+$ docker run -d \
+  --memory="1g" \ # m : megabyte, g : gigabyte  최소메모리 4mb 
+  ...
+```
+- 메모리 초과하면 컨테이너 종료 혹은 실행되지 않음 주의. 
+
+### CPU 제한 
+- 얼마나 쉐어할것인지 
+```
+$ docker run \
+  --cpu-share 1024 \ # default : 1024 -> CPU 할당 1 의미  
+  ubuntu 
+```
+- 상대적인 값. 하나만 있으면 한개가 100% 사용. 
+- 다른 하나가 512의 share로 뜬다면 2:1로 나눠 씀. 
+
+- 특정 CPU만 사용하기 
+```
+$ docker run \ 
+  --cpuset-cpus=2 \ # index는 0부터
+  ubuntu 
+```
+
+- CFS (Completely Fair Schedule) 주기 
+```
+$ docker run \
+  --cpu-period=100000 \ # default = 100000 
+  --cpu-quota=25000 \ # cpu-period의 시간중 CPU 스케줄링을 얼마나 할당할 것인지 
+  ... 
+  # 즉, {quota}/{period} 만틈의 CPU 시간을 할당 받는다 -> 위의 경으 1/4 
+```
+
+- CPU 갯수 
+```
+$ docker run \ 
+  --cpus=0.5 \ # CPU 50%를 차지하겠다. 
+  ... 
+```
+
+- Block I/O 제한 
+  - default 는 무제한 
+```
+$ docker run \
+  --drive-write-bps /dev/xvda:1mb \ # 초당 쓰기 최대 1MB. kb, mb, gb 단위. {device_name}:{value}
+  ubuntu
+  
+
+$ docker run \
+  --drive-write-iops /dev/xvda:5 \ # 상대값. 
+  ubuntu
+```
+
