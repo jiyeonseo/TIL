@@ -51,9 +51,5 @@ on:
 
 references : https://help.github.com/en/actions/reference/events-that-trigger-workflows 
 
-## 결과물 샘플 
-
-
-
-## Sample 
+## Samples 
 - [daily-hackernews-action](https://github.com/jiyeonseo/daily-hackernews-action) : 🗞 Daily top hackernews stories with Github Action & Telegram  
