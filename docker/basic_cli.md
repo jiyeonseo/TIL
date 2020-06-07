@@ -119,12 +119,7 @@ docker rm -f $(docker ps -a -q)
 - `172.17.0.x` 순차적으로 IP 할당. -> 내부에 들어가서 `ifconfig` 
 ```
 docker run -p 80:80 ubuntu:14.04 # [host port]:[container port] 
-docker run -p 3306:3306 -p 192.168.0.100:7777:80 ubuntu:14.04
+docker run -p 3306:3306 -p 192.168.0.100:7777:80 ubuntu:14.04 ## 여러개도 가능 
 ```
-
-
-
-
-
 
 
