@@ -17,10 +17,10 @@ $ docker-compose -v # 버전확인
 ## 설정파일 (docker-compose.yml)
 
 ```yaml
-version: '3.0'
+version: '3.0' # YAML 파일 포맷의 버전 - https://github.com/docker/docker.github.io/blob/master/compose/compose-file/compose-versioning.md#versioning 
 
-services:
-  web: 
+services: # 생설될 컨테이너들을 묶어놓는 단위. 
+  web: # 생성될 서비스의 이름. 
     image: web:test
     ports:
       - "80:80"
@@ -32,9 +32,17 @@ services:
     command: mysqld
 ```
 
-실행 
+
 ```sh 
+# 실행 
 $ docker-compose up -d # 따로 설정 안하면 현재 디렉토리의 docker-compose.yml 파일 읽음.
+
+# 컨테이너 확인 
+$ docker-compose ps 
+Name   Command   State   Ports
+------------------------------
 ```
+
+
 
 
